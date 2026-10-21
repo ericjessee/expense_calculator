@@ -1,10 +1,10 @@
-files = [open("sep16-oc16_2026/accountactivity (3).csv")]
+files = [open("aug16-sep16_2026/accountactivity_fixed.csv")]
 
 transactions = {}
 
 to_file = 1
 if to_file:
-    out_file = open("sep16-oc16_2026/totals.txt", 'x')
+    out_file = open("aug16-sep16_2026/totals.txt", 'x')
 
 def print_switch(str):
     if to_file:
@@ -31,6 +31,7 @@ for file in files:
         else:
             line_count += 1
             items = line.split(",")
+            # Note: you might want to change 'or' to 'and' here depending on your CSV format!
             if items[0] != "" or items[0] != "chequing acct" or items[0] != "credit card":
                 try:
                     data = (float(items[1]), items[2].rstrip('\n'))
@@ -39,8 +40,6 @@ for file in files:
                     else:
                         transactions[items[0]] = [data]
                 except ValueError as err:
-                    # print_switch(err)
-                    # print_switch(items)
                     pass
                 except IndexError as err:
                     pass
@@ -53,6 +52,8 @@ income_total = 0
 necessary_total = 0
 unnecessary_total = 0
 totals = {}
+category_totals = {} # Added to track all totals cleanly for the table
+
 for key in transactions.keys():
     print_switch(f"----------{key}-------------")
     key_total = 0
@@ -73,12 +74,38 @@ for key in transactions.keys():
         else:
             pass
         print_switch(line)
+    
+    category_totals[key] = key_total # Save the raw total for the summary table
     print_switch(f"total for {key}: {key_total}")
+
+# --- NEW TABLE CODE ---
+print_switch("\n=======================================")
+print_switch("         CATEGORY SUMMARY TABLE        ")
+print_switch("=======================================")
+print_switch(f"{'Category':<22} | {'Total':>12}")
+print_switch("-" * 39)
+
+print_switch("Necessary Expenses:")
+for key, amt in category_totals.items():
+    if key in necessary and key not in ["savings", "income", "school"]:
+        print_switch(f"  {key:<20} | ${amt:>10.2f}")
+
+print_switch("-" * 39)
+print_switch("Unnecessary Expenses:")
+for key, amt in category_totals.items():
+    if key not in necessary and key not in ["savings", "income", "school"]:
+        print_switch(f"  {key:<20} | ${amt:>10.2f}")
+print_switch("=======================================\n")
+# ----------------------
+
 print_switch(f"------totals for period:-----")
 print_switch(f"total income: {round(income_total, 2)}")
 print_switch(f"total spent: {round(period_total, 2)}")
 print_switch(f"necessary expenses: {round(necessary_total, 2)}")
 print_switch(f"unnecessary expenses: {round(unnecessary_total, 2)}")
 print_switch(f"total saved: {round(saving_total, 2)}")
+
 highest_key = find_max(totals)
-print_switch(f"most spent: {highest_key}, {totals[highest_key]}")
+# Added a check just in case 'totals' is empty to prevent a KeyError
+if highest_key: 
+    print_switch(f"most spent: {highest_key}, {totals[highest_key]}")
